@@ -33,7 +33,8 @@ type UV struct {
 func NewUV(key string, options ...Option) (*UV, error) {
 	k, err := setKey(key)
 	if err != nil {
-		return nil, err
+		// I used empty uv object instead of nil ... https://hackernoon.com/null-the-billion-dollar-mistake-8t5z32d6
+		return &UV{}, err
 	}
 	u := &UV{
 		Key:      k,
@@ -41,7 +42,7 @@ func NewUV(key string, options ...Option) (*UV, error) {
 	}
 
 	if err := setOptions(u.Settings, options); err != nil {
-		return nil, err
+		return &UV{}, err
 	}
 	return u, nil
 }
@@ -95,33 +96,41 @@ type UVIndexInfo struct {
 // UVData contains data in regards to UV index ranges, rankings, and steps for protection
 var UVData = []UVIndexInfo{
 	{
-		UVIndex: []float64{0, 2.9},
-		MGC:     "Green",
-		Risk:    "Low",
+		UVIndex:               []float64{0, 2.9},
+		MGC:                   "Green",
+		Risk:                  "Low",
+		RecommendedProtection: "Wear sunglasses on bright days; use sunscreen if there is snow on the ground, which reflects UV radiation, or if you have particularly fair skin.",
+	},
+
+	// REPEAT CODE BECAUSE 2.91 TO 3.0 case is not handle with above case block
+	{
+		UVIndex:               []float64{2.9, 3.0},
+		MGC:                   "Green",
+		Risk:                  "Low",
 		RecommendedProtection: "Wear sunglasses on bright days; use sunscreen if there is snow on the ground, which reflects UV radiation, or if you have particularly fair skin.",
 	},
 	{
-		UVIndex: []float64{3, 5.9},
-		MGC:     "Yellow",
-		Risk:    "Moderate",
+		UVIndex:               []float64{3, 5.9},
+		MGC:                   "Yellow",
+		Risk:                  "Moderate",
 		RecommendedProtection: "Take precautions, such as covering up, if you will be outside. Stay in shade near midday when the sun is strongest.",
 	},
 	{
-		UVIndex: []float64{6, 7.9},
-		MGC:     "Orange",
-		Risk:    "High",
+		UVIndex:               []float64{6, 7.9},
+		MGC:                   "Orange",
+		Risk:                  "High",
 		RecommendedProtection: "Cover the body with sun protective clothing, use SPF 30+ sunscreen, wear a hat, reduce time in the sun within three hours of solar noon, and wear sunglasses.",
 	},
 	{
-		UVIndex: []float64{8, 10.9},
-		MGC:     "Red",
-		Risk:    "Very high",
+		UVIndex:               []float64{8, 10.9},
+		MGC:                   "Red",
+		Risk:                  "Very high",
 		RecommendedProtection: "Wear SPF 30+ sunscreen, a shirt, sunglasses, and a wide-brimmed hat. Do not stay in the sun for too long.",
 	},
 	{
-		UVIndex: []float64{11},
-		MGC:     "Violet",
-		Risk:    "Extreme",
+		UVIndex:               []float64{11},
+		MGC:                   "Violet",
+		Risk:                  "Extreme",
 		RecommendedProtection: "Take all precautions: Wear SPF 30+ sunscreen, a long-sleeved shirt and trousers, sunglasses, and a very broad hat. Avoid the sun within three hours of solar noon.",
 	},
 }
@@ -134,14 +143,16 @@ func (u *UV) UVInformation() ([]UVIndexInfo, error) {
 		switch {
 		case u.Value < 2.9:
 			return []UVIndexInfo{UVData[0]}, nil
-		case u.Value > 3 && u.Value < 5.9:
+		case u.Value >= 2.9 && u.Value < 3.0:
 			return []UVIndexInfo{UVData[1]}, nil
-		case u.Value > 6 && u.Value < 7.9:
+		case u.Value >= 3 && u.Value < 5.9:
 			return []UVIndexInfo{UVData[2]}, nil
-		case u.Value > 8 && u.Value < 10.9:
+		case u.Value >= 6 && u.Value < 7.9:
 			return []UVIndexInfo{UVData[3]}, nil
-		case u.Value >= 11:
+		case u.Value >= 8 && u.Value < 10.9:
 			return []UVIndexInfo{UVData[4]}, nil
+		case u.Value >= 11:
+			return []UVIndexInfo{UVData[5]}, nil
 		default:
 			return nil, errInvalidUVIndex
 		}
@@ -152,14 +163,16 @@ func (u *UV) UVInformation() ([]UVIndexInfo, error) {
 			switch {
 			case i.Value < 2.9:
 				uvi = append(uvi, UVData[0])
-			case i.Value > 3 && u.Value < 5.9:
+			case i.Value >= 2.9 && i.Value < 3.0:
 				uvi = append(uvi, UVData[1])
-			case i.Value > 6 && u.Value < 7.9:
+			case i.Value >= 3 && u.Value < 5.9:
 				uvi = append(uvi, UVData[2])
-			case i.Value > 8 && u.Value < 10.9:
+			case i.Value >= 6 && u.Value < 7.9:
 				uvi = append(uvi, UVData[3])
-			case i.Value >= 11:
+			case i.Value >= 8 && u.Value < 10.9:
 				uvi = append(uvi, UVData[4])
+			case i.Value >= 11:
+				uvi = append(uvi, UVData[5])
 			default:
 				return nil, errInvalidUVIndex
 			}
